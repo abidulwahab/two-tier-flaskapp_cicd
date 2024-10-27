@@ -9,15 +9,15 @@ pipeline {
         }
         stage("Build & Test"){
             steps{
-                sh "docker build . -t flaskapp"
+                sh "sudo docker build . -t flaskapp"
             }
         }
         stage("Push to DockerHub"){
             steps{
                 withCredentials([usernamePassword(credentialsId:"dockerHub",passwordVariable:"dockerHubPass",usernameVariable:"dockerHubUser")]){
-                    sh "docker login -u ${env.dockerHubUser} -p ${env.dockerHubPass}"
-                    sh "docker tag flaskapp ${env.dockerHubUser}/flaskapp:latest"
-                    sh "docker push ${env.dockerHubUser}/flaskapp:latest" 
+                    sh "sudo docker login -u ${env.dockerHubUser} -p ${env.dockerHubPass}"
+                    sh "sudo docker tag flaskapp ${env.dockerHubUser}/flaskapp:latest"
+                    sh "sudo docker push ${env.dockerHubUser}/flaskapp:latest" 
                 }
             }
         }
