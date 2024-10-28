@@ -15,14 +15,14 @@ pipeline {
         stage("Push to DockerHub") {
             steps {
                 withCredentials([usernamePassword(credentialsId: "dockerHub", 
-                                                  usernameVariable: 'DokerHubUser', 
-                                                  passwordVariable: 'DokerHubPassword')]) {
+                                                  usernameVariable: 'DOCKER_HUB_USER', 
+                                                  passwordVariable: 'DOCKER_HUB_PASSWORD')]) {
                     // Log in to Docker Hub using the provided credentials
-                    sh "echo \$DokerHubPassword | docker login -u \$DokerHubUser --password-stdin"
+                    sh "echo \$DOCKER_HUB_PASSWORD | docker login -u \$DOCKER_HUB_USER --password-stdin"
                     // Tag the Docker image
-                    sh "docker tag flaskapp \$DokerHubUser/flaskapp:latest"
+                    sh "docker tag flaskapp \$DOCKER_HUB_USER/flaskapp:latest"
                     // Push the Docker image to Docker Hub
-                    sh "docker push \$DokerHubUser/flaskapp:latest" 
+                    sh "docker push \$DOCKER_HUB_USER/flaskapp:latest" 
                 }
             }
         }
