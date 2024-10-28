@@ -9,7 +9,7 @@ pipeline {
         }
         stage("Build & Test"){
             steps{
-                sh "sudo docker build . -t flaskapp"
+                sh "docker build . -t flaskapp"
             }
         }
         stage("Push to DockerHub"){
