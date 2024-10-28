@@ -14,7 +14,7 @@ pipeline {
         }
         stage("Push to DockerHub") {
             steps {
-                withCredentials([usernamePassword(credentialsId: "dockerHub", 
+                withCredentials([usernamePassword(credentialsId: "jenkins", 
                                                   usernameVariable: 'DOCKER_HUB_USER', 
                                                   passwordVariable: 'DOCKER_HUB_PASSWORD')]) {
                     // Log in to Docker Hub using the provided credentials
