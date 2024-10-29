@@ -15,6 +15,7 @@ COPY requirements.txt .
 
 # Install app dependencies
 RUN pip install mysqlclient
+RUN pip install ansible==2.9.17
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the rest of the application code
