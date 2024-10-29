@@ -119,6 +119,14 @@ resource "aws_security_group" "kubadm_demo_sg_common" {
   }
 
   ingress {
+    description = "Allow HTTP"
+    protocol = "tcp"
+    from_port = 8080
+    to_port = 8080 
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
     description = "Allow HTTPS"
     protocol = "tcp"
     from_port = 443
@@ -238,13 +246,39 @@ resource "aws_instance" "kubeadm_demo_control_plane" {
     aws_security_group.kubeadm_demo_sg_flannel.name,
     aws_security_group.kubeadm_demo_sg_control_plane.name,
   ]
-  user_data = <<-EOF
-  #!/bin/bash
-  sudo apt update
-  sudo apt install ansible -y
-  ansible --version
-  ansible-galaxy collection install cloud.terraform
-  EOF
+user_data = <<-EOF
+#!/bin/bash
+### Ansible installation
+sudo apt update
+sudo apt install ansible -y
+ansible --version
+ansible-galaxy collection install cloud.terraform
+
+### Jenkins installation
+sudo apt update -y
+sudo apt install openjdk-11-jdk -y
+sudo apt install wget -y
+wget -q -O - https://pkg.jenkins.io/debian-stable/jenkins.io.key | sudo apt-key add -
+sudo sh -c 'echo deb http://pkg.jenkins.io/debian-stable binary/ > /etc/apt/sources.list.d/jenkins.list'
+sudo apt update -y
+sudo apt install jenkins -y
+sudo usermod -aG docker jenkins
+sudo systemctl enable jenkins
+sudo systemctl start jenkins
+
+### Docker installation
+sudo apt update -y
+sudo apt install apt-transport-https ca-certificates curl software-properties-common -y
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt update -y
+sudo apt install docker-ce docker-ce-cli containerd.io -y
+sudo usermod -aG docker ubuntu
+sudo systemctl enable docker
+sudo systemctl start docker
+EOF
+
+
   root_block_device {
     volume_type = "gp2"
     volume_size = 14
@@ -256,9 +290,8 @@ resource "aws_instance" "kubeadm_demo_control_plane" {
   }
 
   provisioner "local-exec" {
-    command = "echo 'master ${self.public_ip}' >> ./files/hosts"
+    command = "echo '' > ./files/hosts; echo 'master ${self.public_ip}' >> ./files/hosts"
   }
-
 }
 
 resource "aws_instance" "kubeadm_demo_worker_nodes" {
