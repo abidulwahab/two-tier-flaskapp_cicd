@@ -14,7 +14,6 @@ pipeline {
                 withCredentials([sshUserPrivateKey(credentialsId: 'jenkins-ssh-key', keyFileVariable: 'SSH_KEY')]) {
                     sh '''
                         export ANSIBLE_HOST_KEY_CHECKING=False
-                        ansible-galaxy collection install cloud.terraform
                         ansible-playbook -i inventory.yml playbook.yml --private-key $SSH_KEY -u ubuntu
                     '''
                 }
