@@ -1,5 +1,5 @@
 - name: Basic Setup
-  hosts: all
+  hosts: my_servers
   gather_facts: false
   become: true
   vars:
