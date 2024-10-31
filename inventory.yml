@@ -1,3 +1,2 @@
-plugin: cloud.terraform.terraform_provider
-regions:
-  - eu-west-2
+[my_servers]
+18.175.236.41 ansible_ssh_user=ubuntu
