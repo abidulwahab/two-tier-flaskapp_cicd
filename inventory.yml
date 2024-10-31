@@ -1,1 +1,3 @@
 plugin: cloud.terraform.terraform_provider
+regions:
+  - eu-west-2
