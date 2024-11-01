@@ -10,7 +10,7 @@
     - name: Wait 200 seconds for port 22 to become open and contain "OpenSSH"
       wait_for:
         port: 22
-        host: "{{ inventory_hostname }}"
+        host: "{{ my_servers }}"
         search_regex: "OpenSSH"
         timeout: 200
 
@@ -20,7 +20,7 @@
 
     - name: Set a hostname
       ansible.builtin.hostname:
-        name: "{{ node_hostname }}"
+        name: "{{ my_servers }}"
 
     - name: Copy /etc/hosts template
       ansible.builtin.copy:
