@@ -1,17 +1,19 @@
 - name: Basic Setup
-  hosts: my_servers
-  gather_facts: false
+  hosts: all
   become: yes
+  become_method: sudo
+  become_user: ubuntu
   vars:
+    ansible_become_pass: ""
     ansible_python_interpreter: /usr/bin/python3
   tasks:
     - name: Wait 200 seconds for port 22 to become open and contain "OpenSSH"
-      ansible.builtin.wait_for:
+      wait_for:
         port: 22
-        host: my_servers
-        search_regex: OpenSSH
-        delay: 10
+        host: "{{ inventory_hostname }}"
+        search_regex: "OpenSSH"
         timeout: 200
+
       vars:
         ansible_ssh_extra_args: '-o StrictHostKeyChecking=no'
         ansible_connection: local
