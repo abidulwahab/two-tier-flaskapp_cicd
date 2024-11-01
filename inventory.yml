@@ -1,2 +1,2 @@
 [my_servers]
-172.31.23.132 ansible_ssh_user=ubuntu
+3.8.173.14 ansible_ssh_user=ubuntu
