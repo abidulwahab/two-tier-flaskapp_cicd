@@ -1,2 +1,2 @@
 [my_servers]
-localhost ansible_ssh_user=ubuntu
+18.132.42.205 ansible_ssh_user=ubuntu
