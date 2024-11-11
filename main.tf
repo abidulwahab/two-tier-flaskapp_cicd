@@ -1,3 +1,4 @@
+
 terraform {
   required_providers {
     ansible = {
@@ -254,18 +255,6 @@ sudo apt install ansible -y
 ansible --version
 ansible-galaxy collection install cloud.terraform
 
-### Jenkins installation
-sudo apt update -y
-sudo apt install -y openjdk-17-jdk
-sudo apt install wget -y
-wget -q -O - https://pkg.jenkins.io/debian-stable/jenkins.io.key | sudo apt-key add -
-sudo sh -c 'echo deb http://pkg.jenkins.io/debian-stable binary/ > /etc/apt/sources.list.d/jenkins.list'
-sudo apt update -y
-sudo apt install jenkins -y
-sudo usermod -aG docker jenkins
-sudo systemctl enable jenkins
-sudo systemctl start jenkins
-
 ### Docker installation
 sudo apt update -y
 sudo apt install apt-transport-https ca-certificates curl software-properties-common -y
@@ -276,8 +265,24 @@ sudo apt install docker-ce docker-ce-cli containerd.io -y
 sudo usermod -aG docker ubuntu
 sudo systemctl enable docker
 sudo systemctl start docker
-EOF
 
+### Jenkins installation
+sudo apt update -y
+sudo apt install -y openjdk-17-jdk
+sudo apt install wget -y
+# Manually add the Jenkins GPG key using apt-key adv
+sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 5BA31D57EF5975CA
+# Add Jenkins repository
+echo "deb https://pkg.jenkins.io/debian-stable binary/" | sudo tee /etc/apt/sources.list.d/jenkins.list
+sudo apt update -y
+sudo apt install jenkins -y
+sudo usermod -aG docker jenkins
+sudo systemctl enable jenkins
+sudo systemctl start jenkins
+
+curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+
+EOF
 
   root_block_device {
     volume_type = "gp2"
@@ -339,7 +344,7 @@ resource "ansible_host" "kubadm_demo_worker_nodes_host" {
   depends_on = [
     aws_instance.kubeadm_demo_worker_nodes
   ]
-  count = 2
+  count = 1
   name = "worker-${count.index}"
   groups = ["workers"]
   variables = {
