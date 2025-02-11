@@ -151,41 +151,36 @@
   hosts: master
   become: true
   tasks:
-    - name: init kubeadm
-      ansible.builtin.shell: sudo kubeadm init --pod-network-cidr=10.244.0.0/16 --control-plane-endpoint "{{ansible_host}}:6443"
+    - name: Initialize Kubernetes cluster
+      ansible.builtin.command:
+        cmd: kubeadm init --pod-network-cidr=10.244.0.0/16 --control-plane-endpoint "{{ ansible_host }}:6443"
 
-    - name: create ~/.kube directory
-      ansible.builtin.file:
-        path: ~/.kube
-        state: directory
-        mode: "0755"
+    - name: Configure kubeconfig for admin user
+      ansible.builtin.copy:
+        src: /etc/kubernetes/admin.conf
+        dest: "{{ ansible_env.HOME }}/.kube/config"
+        remote_src: yes
+        owner: "{{ ansible_user_id }}"
+        group: "{{ ansible_user_gid }}"
+        mode: "0600"
 
-    - name: copy kubeconfig file
-      shell: sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+    - name: Install Flannel CNI
+      ansible.builtin.command:
+        cmd: kubectl apply -f https://raw.githubusercontent.com/flannel-io/flannel/v0.20.2/Documentation/kube-flannel.yml
 
-    - name: set the correct permission on kubeconfig file
-      shell: sudo chown $(id -u):$(id -g) $HOME/.kube/config
-
-    - name: install flannel
-      ansible.builtin.shell: kubectl apply -f https://raw.githubusercontent.com/flannel-io/flannel/v0.20.2/Documentation/kube-flannel.yml
-
-    - name: Copy kubeconfig file locally
-      ansible.builtin.fetch:
-        src: $HOME/.kube/config
-        dest: /tmp/kubeconfig/
-        flat: yes
-
-    - name: Generate join token for worker nodes
-      ansible.builtin.shell: sudo kubeadm token create --print-join-command
+    - name: Generate join command for worker nodes
+      ansible.builtin.command:
+        cmd: kubeadm token create --print-join-command
       register: join_node_token
 
-    - name: Save join command as variable
+    - name: Save join command as fact
       ansible.builtin.set_fact:
-        join_node: "{{ join_node_token.stdout_lines[0] }}"
+        join_node: "{{ join_node_token.stdout }}"
+      delegate_to: localhost
 
 - name: Setup Worker Nodes
-  hosts: worker
+  hosts: workers
   become: true
   tasks:
-    - name: add worker nodes to cluster
-      shell: "sudo {{ hostvars['control_plane'].join_node }}"
+    - name: Join worker nodes to cluster
+      ansible.builtin.shell: "{{ hostvars[groups['master'][0]].join_node }}"
