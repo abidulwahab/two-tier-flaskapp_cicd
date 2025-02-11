@@ -83,7 +83,7 @@
     - name: Setup containerd to use systemd as cgroup
       ansible.builtin.copy:
         backup: true
-        src: ./files/containerd-config.toml
+        src: ansible/containerd-config.toml
         dest: /etc/containerd/config.toml
 
     - name: Restart service cron, in all cases, also issue daemon-reload to pick up config changes
@@ -184,7 +184,7 @@
         join_node: "{{ join_node_token.stdout_lines[0] }}"
 
 - name: Setup Worker Nodes
-  hosts: workers
+  hosts: worker
   become: true
   tasks:
     - name: add worker nodes to cluster
