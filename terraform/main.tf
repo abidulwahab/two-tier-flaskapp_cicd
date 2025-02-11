@@ -217,6 +217,9 @@ resource "aws_security_group" "kubeadm_demo_sg_worker_nodes" {
   
 }
 
+
+/*
+
 resource "tls_private_key" "kubadm_demo_private_key" {
   
   algorithm = "RSA"
@@ -237,11 +240,14 @@ resource "aws_key_pair" "kubeadm_demo_key_pair" {
   
 }
 
+*/
+
 resource "aws_instance" "kubeadm_demo_control_plane" {
   ami = var.ubuntu_ami
   instance_type = "t2.micro"
  # instance_type = "t2.medium"
-  key_name = aws_key_pair.kubeadm_demo_key_pair.key_name
+ # key_name = aws_key_pair.kubeadm_demo_key_pair.key_name
+  key_name      = "kabid_Key_Pair"
   associate_public_ip_address = true
   security_groups = [
     aws_security_group.kubadm_demo_sg_common.name,
@@ -310,7 +316,8 @@ resource "aws_instance" "kubeadm_demo_worker_nodes" {
   count = var.worker_nodes_count
   ami = var.ubuntu_ami
   instance_type = "t2.micro"
-  key_name = aws_key_pair.kubeadm_demo_key_pair.key_name
+#  key_name = aws_key_pair.kubeadm_demo_key_pair.key_name
+  key_name      = "kabid_Key_Pair"
   associate_public_ip_address = true
   security_groups = [
     aws_security_group.kubeadm_demo_sg_flannel.name,
@@ -344,7 +351,7 @@ resource "ansible_host" "kubadm_demo_control_plane_host" {
   variables = {
     ansible_user = "ubuntu"
     ansible_host = aws_instance.kubeadm_demo_control_plane.public_ip
-    ansible_ssh_private_key_file = "./private-key.pem"
+#    ansible_ssh_private_key_file = "./private-key.pem"
     node_hostname = "master"
   }
 }
@@ -360,7 +367,7 @@ resource "ansible_host" "kubadm_demo_worker_nodes_host" {
     node_hostname = "worker-${count.index}"
     ansible_user = "ubuntu"
     ansible_host = aws_instance.kubeadm_demo_worker_nodes[count.index].public_ip
-    ansible_ssh_private_key_file = "./private-key.pem"
+#    ansible_ssh_private_key_file = "./private-key.pem"
   }
 }
 
