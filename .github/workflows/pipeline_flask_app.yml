@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+
 jobs:
   terraform:
     runs-on: ubuntu-latest
@@ -16,7 +17,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: eu-west-2  #  Change to your AWS region   
+          aws-region: eu-west-2  # Change to your AWS region   
 
       - name: Verify AWS Identity
         run: aws sts get-caller-identity
@@ -31,6 +32,17 @@ jobs:
       - name: Terraform Apply
         run: terraform apply -auto-approve
         working-directory: terraform
+
+      - name: Copy Private Key to Ansible Directory
+        run: |
+          cp terraform/private-key.pem ansible/private-key.pem
+          chmod 600 ansible/private-key.pem  # Ensure correct permissions
+
+      - name: Upload Private Key as an Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: private-key
+          path: ansible/private-key.pem
 
   dynamic-inventory:
     needs: terraform
@@ -74,50 +86,18 @@ jobs:
         with:
           name: ansible-inventory
           path: ansible
-        
+
+      - name: Download Private Key
+        uses: actions/download-artifact@v4
+        with:
+          name: private-key
+          path: ansible
+
+      - name: Set Correct Permissions for Private Key
+        run: chmod 600 ansible/private-key.pem
+
       - name: Install Ansible
         run: sudo apt update && sudo apt install -y ansible
 
-      - name: Set up SSH Key
-        run: |
-          mkdir -p ~/.ssh  #  Ensure the .ssh directory exists
-          chmod 700 ~/.ssh
-          echo "${{ secrets.AWS_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-        
-      - name: Disable SSH Host Key Checking
-        run: |
-          echo "StrictHostKeyChecking no" >> ~/.ssh/config
-          echo "UserKnownHostsFile=/dev/null" >> ~/.ssh/config
-          chmod 600 ~/.ssh/config
-
-      - name: Set SSH Public Key as an Environment Variable
-        run: echo "SSH_PUBLIC_KEY=${{ secrets.SSH_PUBLIC_KEY }}" >> $GITHUB_ENV
-
       - name: Run Ansible Playbook
-        run: ansible-playbook -i ansible/inventory.json ansible/ansible_playbook.yml
-
-  # inspec: 
-  #   needs: ansible
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v4
-
-  #     - name: Download Inventory
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         name: ansible-inventory
-  #         path: ansible
-
-  #     - name: Install InSpec
-  #       run: |
-  #         curl https://omnitruck.chef.io/install.sh | sudo bash -s -- -P inspec
-
-  #     - name: Accept InSpec License
-  #       run: echo "CHEF_LICENSE=accept-no-persist" >> $GITHUB_ENV
-
-  #     - name: Run InSpec Tests
-  #       run: |
-  #         export TARGET_HOST=$(jq -r '.all.hosts[0]' ansible/inventory.json)
-  #         inspec exec inspec-profile --controls=devops_challenge.rb -t ssh://devops@$TARGET_HOST --key-files ~/.ssh/id_rsa
+        run: ansible-playbook -i ansible/inventory.json --private-key ansible/private-key.pem ansible/ansible_playbook.yml
