@@ -4,6 +4,17 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Terraform action to perform (apply or destroy)'
+        required: true
+        default: 'apply'
+        type: choice
+        options:
+          - apply
+          - destroy
+
 jobs:
   terraform:
     runs-on: ubuntu-latest
@@ -16,20 +27,28 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: eu-west-2  #  Change to your AWS region   
+          aws-region: eu-west-2  # Change to your AWS region
 
       - name: Verify AWS Identity
         run: aws sts get-caller-identity
-        
+
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v2
 
       - name: Terraform Init
         run: terraform init
         working-directory: terraform
-        
-      - name: Terraform Apply
-        run: terraform apply -auto-approve
+
+      - name: Terraform Apply or Destroy
+        run: |
+          if [ "${{ github.event.inputs.action }}" == "apply" ]; then
+            terraform apply -auto-approve
+          elif [ "${{ github.event.inputs.action }}" == "destroy" ]; then
+            terraform destroy -auto-approve
+          else
+            echo "Invalid action specified"
+            exit 1
+          fi
         working-directory: terraform
 
   dynamic-inventory:
