@@ -184,7 +184,7 @@
         join_node: "{{ join_node_token.stdout_lines[0] }}"
 
 - name: Setup Worker Nodes
-  hosts: worker
+  hosts: workers
   become: true
   tasks:
     - name: add worker nodes to cluster
