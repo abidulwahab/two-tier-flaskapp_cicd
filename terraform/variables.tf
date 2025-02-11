@@ -13,7 +13,7 @@ variable "ubuntu_ami" {
 variable "worker_nodes_count" {
   type = number
   description = "the total number of worker nodes"
-  default = 2
+  default = 1
 }
 
 variable "keypair_name" {
