@@ -363,3 +363,15 @@ resource "ansible_host" "kubadm_demo_worker_nodes_host" {
     ansible_ssh_private_key_file = "./private-key.pem"
   }
 }
+
+
+# 
+terraform {
+  backend "s3" {
+    bucket         = "abibucket225"
+    key            = "key/terraform.tfstate"
+    region         = "eu-west-2"
+#    dynamodb_table = "terraform-lock"
+  }
+}
+
