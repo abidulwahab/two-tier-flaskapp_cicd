@@ -244,8 +244,8 @@ resource "aws_key_pair" "kubeadm_demo_key_pair" {
 
 resource "aws_instance" "kubeadm_demo_control_plane" {
   ami = var.ubuntu_ami
-  instance_type = "t2.micro"
- # instance_type = "t2.medium"
+ # instance_type = "t2.micro"
+  instance_type = "t2.medium"
  # key_name = aws_key_pair.kubeadm_demo_key_pair.key_name
   key_name      = "kabid_Key_Pair"
   associate_public_ip_address = true
