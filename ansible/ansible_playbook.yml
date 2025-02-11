@@ -3,47 +3,41 @@
   become: yes
   tasks:
     - name: Disable swap on all nodes
-      ansible.builtin.shell: swapoff -a
-      
-    - name: kernel module prerequesites
-      ansible.builtin.shell:
-        cmd: |
-          cat <<EOF | sudo tee /etc/modules-load.d/k8s.conf
+      ansible.builtin.command: swapoff -a
+
+    - name: Load kernel modules
+      ansible.builtin.copy:
+        dest: /etc/modules-load.d/k8s.conf
+        content: |
           overlay
           br_netfilter
-          EOF
 
-    - name: add overlay module
+    - name: Add kernel modules
       community.general.modprobe:
-        name: overlay
+        name: "{{ item }}"
         state: present
+      loop:
+        - overlay
+        - br_netfilter
 
-    - name: add br_netfilter module
-      community.general.modprobe:
-        name: br_netfilter
+    - name: Configure sysctl parameters
+      ansible.builtin.sysctl:
+        name: "{{ item.name }}"
+        value: "{{ item.value }}"
         state: present
+        sysctl_set: yes
+        reload: yes
+      loop:
+        - { name: "net.bridge.bridge-nf-call-iptables", value: "1" }
+        - { name: "net.bridge.bridge-nf-call-ip6tables", value: "1" }
+        - { name: "net.ipv4.ip_forward", value: "1" }
 
-    - name: sysctl params required by setup
-      ansible.builtin.shell:
-        cmd: |
-          cat <<EOF | sudo tee /etc/sysctl.d/k8s.conf
-          net.bridge.bridge-nf-call-iptables  = 1
-          net.bridge.bridge-nf-call-ip6tables = 1
-          net.ipv4.ip_forward                 = 1
-          EOF
-
-    - name: apply sysctl params without reboot
-      ansible.builtin.shell: sysctl --system
-
-    - name: create containerd config file
-      ansible.builtin.shell: mkdir -p /etc/containerd && touch /etc/containerd/config.toml
-
-    - name: Remove existing docker.list file
+    - name: Create containerd config directory
       ansible.builtin.file:
-        path: /etc/apt/sources.list.d/docker.list
-        state: absent
+        path: /etc/containerd
+        state: directory
 
-    - name: Install containerd pre-reqs
+    - name: Install containerd dependencies
       ansible.builtin.apt:
         pkg:
           - apt-transport-https
@@ -52,90 +46,13 @@
           - gnupg
           - lsb-release
 
-    - name: add docker GPG key
-      apt_key:
-        url: https://download.docker.com/linux/ubuntu/gpg
-        state: present
-
-    - name: Add Docker Repository
-      apt_repository:
-        repo: deb https://download.docker.com/linux/ubuntu jammy stable
-        state: present
-
-    - name: Update apt and install docker-ce
-      apt:
-        name: docker-ce
-        state: latest
-        update_cache: true
-
-    - name: Install containerd.io
-      ansible.builtin.apt:
-        pkg:
-          - containerd.io
-
-    - name: Enable containerd
-      ansible.builtin.systemd:
-        name: containerd
-        daemon_reload: yes
-        state: started
-        enabled: yes
-
-    - name: Setup containerd to use systemd as cgroup
-      ansible.builtin.copy:
-        backup: true
-        src: containerd-config.toml
-        dest: /etc/containerd/config.toml
-
-    - name: Restart service cron, in all cases, also issue daemon-reload to pick up config changes
-      ansible.builtin.systemd:
-        state: restarted
-        daemon_reload: yes
-        name: containerd
-
-    ## NOTE: kubeadm stuff
-    - name: Download Google Cloud's public key
-      ansible.builtin.apt_key:
-        url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
-        state: present
-
-    - name: Create directory for Kubernetes keyrings
-      ansible.builtin.file:
-        path: /etc/apt/keyrings
-        state: directory
-        mode: '0755'
-
-    - name: Download Kubernetes GPG key to keyring
-      ansible.builtin.get_url:
-        url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
-        dest: /etc/apt/keyrings/kubernetes-archive-keyring.gpg
-        mode: '0644'
-
-    - name: add Docker apt-key
-      get_url:
-        url: https://download.docker.com/linux/ubuntu/gpg
-        dest: /etc/apt/keyrings/docker-apt-keyring.asc
-        mode: '0644'
-        force: true
-
-    - name: add Kubernetes apt-key
-      get_url:
-        url: https://pkgs.k8s.io/core:/stable:/v1.29/deb/Release.key
-        dest: /etc/apt/keyrings/kubernetes-apt-keyring.asc
-        mode: '0644'
-        force: true
-
-    - name: add Kubernetes' APT repository
-      apt_repository:
+    - name: Add Kubernetes APT repository
+      ansible.builtin.apt_repository:
         repo: "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.asc] https://pkgs.k8s.io/core:/stable:/v1.29/deb/ /"
         state: present
         update_cache: yes
 
-    - name: Update apt cache
-      ansible.builtin.apt:
-        update_cache: yes
-        cache_valid_time: 3600
-
-    - name: Install kubadm, kubectl, kubelet
+    - name: Install Kubernetes components
       ansible.builtin.apt:
         pkg:
           - kubelet
@@ -144,36 +61,30 @@
         state: latest
         update_cache: yes
 
-    - name: hold kubectl,kubeadm,kubelet packages
+    - name: Hold Kubernetes packages
       ansible.builtin.shell: apt-mark hold kubelet kubectl kubeadm
 
 - name: Setup Control Plane Node
   hosts: master
   become: true
   tasks:
-    - name: init kubeadm
-      ansible.builtin.shell: sudo kubeadm init --pod-network-cidr=10.244.0.0/16 --control-plane-endpoint "{{ansible_host}}:6443"
+    - name: Initialize kubeadm
+      ansible.builtin.shell: sudo kubeadm init --pod-network-cidr=10.244.0.0/16 --control-plane-endpoint "{{ ansible_host }}:6443"
 
-    - name: create ~/.kube directory
+    - name: Create kubeconfig directory
       ansible.builtin.file:
-        path: ~/.kube
+        path: "{{ ansible_env.HOME }}/.kube"
         state: directory
         mode: "0755"
 
-    - name: copy kubeconfig file
-      shell: sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+    - name: Copy kubeconfig file
+      shell: sudo cp -i /etc/kubernetes/admin.conf {{ ansible_env.HOME }}/.kube/config
 
-    - name: set the correct permission on kubeconfig file
-      shell: sudo chown $(id -u):$(id -g) $HOME/.kube/config
+    - name: Set correct permissions on kubeconfig file
+      shell: sudo chown $(id -u):$(id -g) {{ ansible_env.HOME }}/.kube/config
 
-    - name: install flannel
+    - name: Install Flannel CNI
       ansible.builtin.shell: kubectl apply -f https://raw.githubusercontent.com/flannel-io/flannel/v0.20.2/Documentation/kube-flannel.yml
-
-    - name: Copy kubeconfig file locally
-      ansible.builtin.fetch:
-        src: $HOME/.kube/config
-        dest: /tmp/kubeconfig/
-        flat: yes
 
     - name: Generate join token for worker nodes
       ansible.builtin.shell: sudo kubeadm token create --print-join-command
@@ -184,8 +95,8 @@
         join_node: "{{ join_node_token.stdout_lines[0] }}"
 
 - name: Setup Worker Nodes
-  hosts: workers
+  hosts: worker
   become: true
   tasks:
-    - name: add worker nodes to cluster
-      shell: "sudo {{ hostvars['control_plane'].join_node }}"
+    - name: Join worker nodes to cluster
+      shell: "sudo {{ hostvars[groups['master'][0]].join_node }}"
