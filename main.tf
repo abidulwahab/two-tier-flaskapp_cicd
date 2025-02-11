@@ -239,7 +239,11 @@ resource "aws_key_pair" "kubeadm_demo_key_pair" {
 
 resource "aws_instance" "kubeadm_demo_control_plane" {
   ami = var.ubuntu_ami
+<<<<<<< HEAD
   instance_type = "t2.micro"
+=======
+  instance_type = "t2.medium"
+>>>>>>> f3758fa (First Commit)
   key_name = aws_key_pair.kubeadm_demo_key_pair.key_name
   associate_public_ip_address = true
   security_groups = [
@@ -266,7 +270,10 @@ sudo usermod -aG docker ubuntu
 sudo systemctl enable docker
 sudo systemctl start docker
 
+<<<<<<< HEAD
 /*
+=======
+>>>>>>> f3758fa (First Commit)
 ### Jenkins installation
 sudo apt update -y
 sudo apt install -y openjdk-17-jdk
@@ -280,7 +287,10 @@ sudo apt install jenkins -y
 sudo usermod -aG docker jenkins
 sudo systemctl enable jenkins
 sudo systemctl start jenkins
+<<<<<<< HEAD
 */
+=======
+>>>>>>> f3758fa (First Commit)
 
 curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 
