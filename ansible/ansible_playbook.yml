@@ -5,7 +5,7 @@
     - name: Disable swap on all nodes
       ansible.builtin.shell: swapoff -a
       
-   - name: kernel module prerequesites
+    - name: kernel module prerequesites
       ansible.builtin.shell:
         cmd: |
           cat <<EOF | sudo tee /etc/modules-load.d/k8s.conf
