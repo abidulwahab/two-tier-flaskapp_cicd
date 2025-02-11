@@ -1,11 +1,8 @@
-- name: Basic Setup
+- name: Configure Nodes
   hosts: all
   become: yes
-  vars:
-    ansible_python_interpreter: /usr/bin/python3
   tasks:
-  
-   - name: Disable swap on all nodes
+    - name: Disable swap on all nodes
       ansible.builtin.shell: swapoff -a
       
    - name: kernel module prerequesites
