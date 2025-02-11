@@ -299,10 +299,11 @@ EOF
     Name = "Kubeadm Master"
     Role = "Control plane node"
   }
-
+/*
   provisioner "local-exec" {
     command = "echo '' > ./files/hosts; echo 'master ${self.public_ip}' >> ./files/hosts"
   }
+*/
 }
 
 resource "aws_instance" "kubeadm_demo_worker_nodes" {
@@ -326,10 +327,12 @@ resource "aws_instance" "kubeadm_demo_worker_nodes" {
     Role = "Worker node"
   }
 
-  provisioner "local-exec" {
+/*  
+    provisioner "local-exec" {
     command = "echo 'worker-${count.index} ${self.public_ip}' >> ./files/hosts"
   }
-  
+*/
+
 }
 
 resource "ansible_host" "kubadm_demo_control_plane_host" {
