@@ -9,18 +9,25 @@ def get_instances():
     instances = ec2.describe_instances(
         Filters=[
             {'Name': 'instance-state-name', 'Values': ['running']},  # Filter for running instances
-            {'Name': 'tag:Name', 'Values': ['Kubeadm Worker*']}      # Filter for instances with name like "Kubeadm Worker*"
         ]
     )
 
     # Initialize the inventory structure
     inventory = {
         "all": {
-            "hosts": {},
+            "hosts": [],
             "vars": {
                 "ansible_user": "ubuntu"  # Set the SSH user
                 # "ansible_ssh_private_key_file": "~/.ssh/id_rsa"  # Uncomment if using a private key
             }
+        },
+        "worker": {
+            "hosts": [],
+            "vars": {}
+        },
+        "master": {
+            "hosts": [],
+            "vars": {}
         }
     }
 
@@ -29,7 +36,14 @@ def get_instances():
         for instance in reservation['Instances']:
             public_ip = instance.get('PublicIpAddress')
             if public_ip:
-                inventory["all"]["hosts"][public_ip] = {}
+                # Check the Name tag to determine if it's a worker or master
+                for tag in instance.get('Tags', []):
+                    if tag['Key'] == 'Name':
+                        if tag['Value'].startswith('Kubeadm Worker'):
+                            inventory["worker"]["hosts"].append(public_ip)
+                        elif tag['Value'].startswith('Kubeadm Master'):
+                            inventory["master"]["hosts"].append(public_ip)
+                inventory["all"]["hosts"].append(public_ip)
 
     return inventory
 
