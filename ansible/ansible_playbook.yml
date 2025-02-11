@@ -7,38 +7,11 @@
     ansible_become_pass: ""
     ansible_python_interpreter: /usr/bin/python3
   tasks:
-    - name: Wait 200 seconds for port 22 to become open and contain "OpenSSH"
-      wait_for:
-        port: 22
-        host: "{{ (ansible_ssh_host|default(ansible_host))|default(inventory_hostname) }}"
-        search_regex: "OpenSSH"
-        timeout: 200
-
-      vars:
-        ansible_ssh_extra_args: '-o StrictHostKeyChecking=no'
-        ansible_connection: local
-
-    - name: Set a hostname
-      ansible.builtin.hostname:
-        name: "{{ node_hostname }}"
-
-    - name: Copy /etc/hosts template
-      ansible.builtin.copy:
-        backup: true
-        src: ./files/hosts
-        dest: /tmp/hosts
-
-    - name: Insert/Update configuration using a local file and validate it
-      ansible.builtin.blockinfile:
-        block: "{{ lookup('file', './files/hosts') }}"
-        path: /etc/hosts
-        backup: yes
-
-    - name: Disable swap on all nodes
+   - name: Disable swap on all nodes
       ansible.builtin.shell: swapoff -a
 
       
-    - name: kernel module prerequesites
+   - name: kernel module prerequesites
       ansible.builtin.shell:
         cmd: |
           cat <<EOF | sudo tee /etc/modules-load.d/k8s.conf
