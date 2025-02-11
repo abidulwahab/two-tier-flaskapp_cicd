@@ -29,7 +29,7 @@ jobs:
         working-directory: terraform
         
       - name: Terraform Apply
-        run: terraform destroy -auto-approve
+        run: terraform apply -auto-approve
         working-directory: terraform
 
   dynamic-inventory:
@@ -91,8 +91,8 @@ jobs:
           echo "UserKnownHostsFile=/dev/null" >> ~/.ssh/config
           chmod 600 ~/.ssh/config
 
-      - name: Set SSH Public Key as an Environment Variable
-        run: echo "SSH_PUBLIC_KEY=${{ secrets.SSH_PUBLIC_KEY }}" >> $GITHUB_ENV
+#      - name: Set SSH Public Key as an Environment Variable
+#        run: echo "SSH_PUBLIC_KEY=${{ secrets.SSH_PUBLIC_KEY }}" >> $GITHUB_ENV
 
       - name: Run Ansible Playbook
         run: ansible-playbook -i ansible/inventory.json ansible/ansible_playbook.yml
