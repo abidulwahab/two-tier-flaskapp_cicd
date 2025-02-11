@@ -83,7 +83,7 @@
     - name: Setup containerd to use systemd as cgroup
       ansible.builtin.copy:
         backup: true
-        src: ansible/containerd-config.toml
+        src: containerd-config.toml
         dest: /etc/containerd/config.toml
 
     - name: Restart service cron, in all cases, also issue daemon-reload to pick up config changes
