@@ -1,15 +1,12 @@
 - name: Basic Setup
   hosts: all
   become: yes
-  become_method: sudo
-  become_user: ubuntu
   vars:
-    ansible_become_pass: ""
     ansible_python_interpreter: /usr/bin/python3
   tasks:
+  
    - name: Disable swap on all nodes
       ansible.builtin.shell: swapoff -a
-
       
    - name: kernel module prerequesites
       ansible.builtin.shell:
