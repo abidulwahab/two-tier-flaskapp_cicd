@@ -15,18 +15,18 @@ def get_instances():
     # Initialize the inventory structure
     inventory = {
         "all": {
-            "hosts": [],
+            "hosts": {},  # Use a dictionary instead of a list
             "vars": {
                 "ansible_user": "ubuntu"  # Set the SSH user
                 # "ansible_ssh_private_key_file": "~/.ssh/id_rsa"  # Uncomment if using a private key
             }
         },
         "worker": {
-            "hosts": [],
+            "hosts": {},  # Use a dictionary instead of a list
             "vars": {}
         },
         "master": {
-            "hosts": [],
+            "hosts": {},  # Use a dictionary instead of a list
             "vars": {}
         }
     }
@@ -40,10 +40,10 @@ def get_instances():
                 for tag in instance.get('Tags', []):
                     if tag['Key'] == 'Name':
                         if tag['Value'].startswith('Kubeadm Worker'):
-                            inventory["worker"]["hosts"].append(public_ip)
+                            inventory["worker"]["hosts"][public_ip] = {}  # Add to worker group
                         elif tag['Value'].startswith('Kubeadm Master'):
-                            inventory["master"]["hosts"].append(public_ip)
-                inventory["all"]["hosts"].append(public_ip)
+                            inventory["master"]["hosts"][public_ip] = {}  # Add to master group
+                inventory["all"]["hosts"][public_ip] = {}  # Add to all group
 
     return inventory
 
