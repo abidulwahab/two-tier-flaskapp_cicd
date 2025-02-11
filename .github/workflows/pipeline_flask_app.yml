@@ -1,4 +1,5 @@
 name: Deploy Infrastructure
+
 on:
   push:
     branches:
